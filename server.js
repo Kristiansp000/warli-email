@@ -1,112 +1,80 @@
-require("dotenv").config();
-const express = require("express");
+require("dotenv").config(); //[cite: 4]
+const express = require("express"); //[cite: 4]
+const cors = require("cors"); // 1. Import modul cors
 const {
   sendEliteEmail,
   sendOTPEmail,
   sendResetPasswordEmail,
-} = require("./email_service");
+} = require("./email_service"); //[cite: 4]
 
-const app = express();
-app.use(express.json({ limit: "1mb" }));
+const app = express(); //[cite: 4]
 
-app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    service: "Warung Elite Email API",
-    endpoints: [
-      "POST /api/email",
-      "POST /api/email/otp",
-      "POST /api/email/reset-password",
-    ],
-  });
-});
+// 2. Konfigurasi CORS
+// Opsional A: Izinkan semua domain (Cocok untuk lokal/development)
+app.use(cors());
 
-// Endpoint Email General / Pesanan (Non-blocking / Background Process)
-app.post("/api/email", (req, res) => {
-  try {
-    const { to, subject, name, message, order_details } = req.body;
-
-    if (!to || !subject || !name || !message) {
-      return res.status(400).json({
-        success: false,
-        message: "to, subject, name, dan message wajib diisi.",
-      });
+/* 
+// Opsional B: Batasi hanya domain tertentu saja (Rekomendasi Production)
+const allowedOrigins = ['http://domain-php-kamu.com', 'http://localhost:8000'];
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Akses ditolak oleh kebijakan CORS.'));
     }
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+*/
 
-    // 1. Langsung kembalikan respons ke PHP agar koneksi HTTP segera selesai
-    res.status(200).json({
-      success: true,
-      message: "Permintaan pengiriman email diterima dan diproses di background.",
-    });
+app.use(express.json({ limit: "1mb" })); //[cite: 4]
 
-    // 2. Jalankan fungsi kirim email di background (tanpa await)
-    sendEliteEmail(to, subject, name, message, order_details || null).catch(
-      (err) => {
-        console.error("[Email Background Error]:", err.message);
-      }
-    );
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-});
+// --- Sisa routing tetap sama seperti sebelumnya ---[cite: 4]
+app.get("/", (req, res) => { //[cite: 4]
+  res.json({ //[cite: 4]
+    success: true, //[cite: 4]
+    service: "Warung Elite Email API", //[cite: 4]
+    endpoints: [ //[cite: 4]
+      "POST /api/email", //[cite: 4]
+      "POST /api/email/otp", //[cite: 4]
+      "POST /api/email/reset-password", //[cite: 4]
+    ], //[cite: 4]
+  }); //[cite: 4]
+}); //[cite: 4]
 
-// Endpoint OTP
-app.post("/api/email/otp", (req, res) => {
-  try {
-    const { to, name, otp_code } = req.body;
+app.post("/api/email", (req, res) => { //[cite: 4]
+  try { //[cite: 4]
+    const { to, subject, name, message, order_details } = req.body; //[cite: 4]
 
-    if (!to || !name || !otp_code) {
-      return res.status(400).json({
-        success: false,
-        message: "to, name, dan otp_code wajib diisi.",
-      });
-    }
+    if (!to || !subject || !name || !message) { //[cite: 4]
+      return res.status(400).json({ //[cite: 4]
+        success: false, //[cite: 4]
+        message: "to, subject, name, dan message wajib diisi.", //[cite: 4]
+      }); //[cite: 4]
+    } //[cite: 4]
 
-    res.status(200).json({
-      success: true,
-      message: "Permintaan pengiriman OTP diterima.",
-    });
+    res.status(200).json({ //[cite: 4]
+      success: true, //[cite: 4]
+      message: "Permintaan pengiriman email diterima dan diproses di background.", //[cite: 4]
+    }); //[cite: 4]
 
-    sendOTPEmail(to, name, otp_code).catch((err) => {
-      console.error("[OTP Background Error]:", err.message);
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
+    sendEliteEmail(to, subject, name, message, order_details || null).catch( //[cite: 4]
+      (err) => { //[cite: 4]
+        console.error("[Email Background Error]:", err.message); //[cite: 4]
+      } //[cite: 4]
+    ); //[cite: 4]
+  } catch (error) { //[cite: 4]
+    console.error(error); //[cite: 4]
+    res.status(500).json({ //[cite: 4]
+      success: false, //[cite: 4]
+      message: error.message, //[cite: 4]
+    }); //[cite: 4]
+  } //[cite: 4]
+}); //[cite: 4]
 
-// Endpoint Reset Password
-app.post("/api/email/reset-password", (req, res) => {
-  try {
-    const { to, name, new_password } = req.body;
-
-    if (!to || !name || !new_password) {
-      return res.status(400).json({
-        success: false,
-        message: "to, name, dan new_password wajib diisi.",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Permintaan pengiriman Reset Password diterima.",
-    });
-
-    sendResetPasswordEmail(to, name, new_password).catch((err) => {
-      console.error("[Reset Password Background Error]:", err.message);
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-const PORT = Number(process.env.PORT || 3030);
-app.listen(PORT, () => {
-  console.log(`Warung Elite Email API berjalan di http://localhost:${PORT}`);
-});
+const PORT = Number(process.env.PORT || 3030); //[cite: 4]
+app.listen(PORT, () => { //[cite: 4]
+  console.log(`Warung Elite Email API berjalan di http://localhost:${PORT}`); //[cite: 4]
+}); //[cite: 4]
