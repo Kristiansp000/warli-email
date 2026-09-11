@@ -1,80 +1,88 @@
-require("dotenv").config(); //[cite: 4]
-const express = require("express"); //[cite: 4]
-const cors = require("cors"); // 1. Import modul cors
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
 const {
   sendEliteEmail,
   sendOTPEmail,
   sendResetPasswordEmail,
-} = require("./email_service"); //[cite: 4]
+} = require("./email_service");
 
-const app = express(); //[cite: 4]
+const app = express();
 
-// 2. Konfigurasi CORS
-// Opsional A: Izinkan semua domain (Cocok untuk lokal/development)
-app.use(cors());
+// Konfigurasi CORS: Mengizinkan akses dari semua domain (*)
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
-/* 
-// Opsional B: Batasi hanya domain tertentu saja (Rekomendasi Production)
-const allowedOrigins = ['http://domain-php-kamu.com', 'http://localhost:8000'];
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Akses ditolak oleh kebijakan CORS.'));
+app.use(express.json({ limit: "1mb" }));
+
+// Route dasar
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    service: "Warung Elite Email API",
+    endpoints: [
+      "POST /api/email",
+      "POST /api/email/otp",
+      "POST /api/email/reset-password",
+    ],
+  });
+});
+
+// Route kirim email
+app.post("/api/email", async (req, res) => {
+  try {
+    const { to, subject, name, message, order_details } = req.body;
+
+    if (!to || !subject || !name || !message) {
+      return res.status(400).json({
+        success: false,
+        message: "to, subject, name, dan message wajib diisi.",
+      });
     }
-  },
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-*/
 
-app.use(express.json({ limit: "1mb" })); //[cite: 4]
+    // Menggunakan await karena Vercel Serverless Function akan mati 
+    // setelah 'res' dikirim (background process tanpa await bisa terputus)
+    const result = await sendEliteEmail(
+      to,
+      subject,
+      name,
+      message,
+      order_details || null
+    );
 
-// --- Sisa routing tetap sama seperti sebelumnya ---[cite: 4]
-app.get("/", (req, res) => { //[cite: 4]
-  res.json({ //[cite: 4]
-    success: true, //[cite: 4]
-    service: "Warung Elite Email API", //[cite: 4]
-    endpoints: [ //[cite: 4]
-      "POST /api/email", //[cite: 4]
-      "POST /api/email/otp", //[cite: 4]
-      "POST /api/email/reset-password", //[cite: 4]
-    ], //[cite: 4]
-  }); //[cite: 4]
-}); //[cite: 4]
+    if (result.success) {
+      return res.status(200).json({
+        success: true,
+        message: "Email berhasil dikirim.",
+        messageId: result.messageId,
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        message: result.error,
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
 
-app.post("/api/email", (req, res) => { //[cite: 4]
-  try { //[cite: 4]
-    const { to, subject, name, message, order_details } = req.body; //[cite: 4]
+// Hanya jalankan listener lokal jika tidak di-deploy ke Vercel
+if (process.env.NODE_ENV !== "production") {
+  const PORT = Number(process.env.PORT || 3030);
+  app.listen(PORT, () => {
+    console.log(`Warung Elite Email API berjalan di http://localhost:${PORT}`);
+  });
+}
 
-    if (!to || !subject || !name || !message) { //[cite: 4]
-      return res.status(400).json({ //[cite: 4]
-        success: false, //[cite: 4]
-        message: "to, subject, name, dan message wajib diisi.", //[cite: 4]
-      }); //[cite: 4]
-    } //[cite: 4]
-
-    res.status(200).json({ //[cite: 4]
-      success: true, //[cite: 4]
-      message: "Permintaan pengiriman email diterima dan diproses di background.", //[cite: 4]
-    }); //[cite: 4]
-
-    sendEliteEmail(to, subject, name, message, order_details || null).catch( //[cite: 4]
-      (err) => { //[cite: 4]
-        console.error("[Email Background Error]:", err.message); //[cite: 4]
-      } //[cite: 4]
-    ); //[cite: 4]
-  } catch (error) { //[cite: 4]
-    console.error(error); //[cite: 4]
-    res.status(500).json({ //[cite: 4]
-      success: false, //[cite: 4]
-      message: error.message, //[cite: 4]
-    }); //[cite: 4]
-  } //[cite: 4]
-}); //[cite: 4]
-
-const PORT = Number(process.env.PORT || 3030); //[cite: 4]
-app.listen(PORT, () => { //[cite: 4]
-  console.log(`Warung Elite Email API berjalan di http://localhost:${PORT}`); //[cite: 4]
-}); //[cite: 4]
+// Export app agar dibaca oleh Vercel
+module.exports = app;
