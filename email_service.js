@@ -25,8 +25,8 @@ function createTransporter() {
     port: Number(process.env.SMTP_PORT || 587),
     secure: String(process.env.SMTP_SECURE || "false") === "true",
     auth: {
-      user: requiredEnv("warunggelite@gmail.com"),
-      pass: requiredEnv("eqvd hyir biqt evhz"),
+      user: "warunggelite@gmail.com",
+      pass: "eqvd hyir biqt evhz",
     },
   });
 }
