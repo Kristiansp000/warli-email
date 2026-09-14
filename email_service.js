@@ -106,7 +106,7 @@ async function sendEliteEmail(toEmail, subject, name, messageContent, orderDetai
 
   try {
     const info = await transporter.sendMail({
-      from: `"Warung Elite" <${requiredEnv("SMTP_USER")}>`,
+      from: "Warung Elite",
       to: toEmail,
       subject: `Warung Elite | ${subject}`,
       html,
