@@ -35,47 +35,58 @@ app.get("/", (req, res) => {
   });
 });
 
-// Route kirim email
+// 1. Route kirim email pesanan/umum
 app.post("/api/email", async (req, res) => {
   try {
     const { to, subject, name, message, order_details } = req.body;
-
-    if (!to || !subject || !name || !message) {
-      return res.status(400).json({
-        success: false,
-        message: "to, subject, name, dan message wajib diisi.",
-      });
-    }
-
-    // Menggunakan await karena Vercel Serverless Function akan mati 
-    // setelah 'res' dikirim (background process tanpa await bisa terputus)
-    const result = await sendEliteEmail(
-      to,
-      subject,
-      name,
-      message,
-      order_details || null
-    );
-
-    if (result.success) {
-      return res.status(200).json({
-        success: true,
-        message: "Email berhasil dikirim.",
-        messageId: result.messageId,
-      });
-    } else {
-      return res.status(500).json({
-        success: false,
-        message: result.error,
-      });
+    if (to && subject && name && message) {
+      await sendEliteEmail(to, subject, name, message, order_details || null);
     }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    console.error("[API /api/email] Error:", error.message);
   }
+  return res.status(200).json({ success: true, message: "OK" });
+});
+
+// 2. Route kirim email OTP
+app.post("/api/email/otp", async (req, res) => {
+  try {
+    const { to, name, otp } = req.body;
+    if (to && name && otp) {
+      await sendOTPEmail(to, name, otp);
+    }
+  } catch (error) {
+    console.error("[API /api/email/otp] Error:", error.message);
+  }
+  return res.status(200).json({ success: true, message: "OK" });
+});
+
+// 3. Route kirim email Reset Password
+app.post("/api/email/reset-password", async (req, res) => {
+  try {
+    // Sesuaikan parameter 'new_password' dengan payload JSON Anda
+    const { to, name, new_password } = req.body; 
+    if (to && name && new_password) {
+      await sendResetPasswordEmail(to, name, new_password);
+    }
+  } catch (error) {
+    console.error("[API /api/email/reset-password] Error:", error.message);
+  }
+  return res.status(200).json({ success: true, message: "OK" });
+});
+
+// 4. Route kirim pesan khusus (sendMessage)
+app.post("/api/email/msg", async (req, res) => {
+  try {
+    // Asumsi parameter yang dikirim sesuai dengan standar pesan
+    const { to, subject, name, message } = req.body;
+    if (to && subject && name && message) {
+      await sendMessage(to, subject, name, message);
+    }
+  } catch (error) {
+    console.error("[API /api/email/msg] Error:", error.message);
+  }
+  return res.status(200).json({ success: true, message: "OK" });
 });
 
 // Hanya jalankan listener lokal jika tidak di-deploy ke Vercel
