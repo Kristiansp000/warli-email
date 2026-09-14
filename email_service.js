@@ -137,9 +137,9 @@ async function sendOTPEmail(toEmail, name, otpCode) {
 async function sendMessage(toEmail, subject, name, msg) {
   const message = `
     Pesan Baru ! <br><br>
-    <span style="font-size:24px;font-weight:bold;color:#c5a059;">
+   
       ${escapeHtml(msg)}
-    </span><br><br>.
+    <br><br>.
   `;
 
   return sendEliteEmail(toEmail, `Pesan Baru dari ${name}!`, name, message);
