@@ -5,6 +5,7 @@ const {
   sendEliteEmail,
   sendOTPEmail,
   sendResetPasswordEmail,
+  sendMessage,
 } = require("./email_service");
 
 const app = express();
@@ -29,6 +30,7 @@ app.get("/", (req, res) => {
       "POST /api/email",
       "POST /api/email/otp",
       "POST /api/email/reset-password",
+      "POST /api/email/msg",
     ],
   });
 });

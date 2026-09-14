@@ -120,6 +120,7 @@ async function sendEliteEmail(toEmail, subject, name, messageContent, orderDetai
   }
 }
 
+
 async function sendOTPEmail(toEmail, name, otpCode) {
   const message = `
     Gunakan kode berikut untuk memverifikasi akun Anda:<br><br>
@@ -130,6 +131,16 @@ async function sendOTPEmail(toEmail, name, otpCode) {
   `;
 
   return sendEliteEmail(toEmail, "Kode OTP Registrasi", name, message);
+}
+async function sendMessage(toEmail, name, msg) {
+  const message = `
+    Pesan Baru ! <br><br>
+    <span style="font-size:24px;font-weight:bold;color:#c5a059;">
+      ${escapeHtml(msg)}
+    </span><br><br>.
+  `;
+
+  return sendEliteEmail(toEmail, `Pesan Baru dari ${name}!`, name, message);
 }
 
 async function sendResetPasswordEmail(toEmail, name, newPassword) {
