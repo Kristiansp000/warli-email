@@ -132,6 +132,8 @@ async function sendOTPEmail(toEmail, name, otpCode) {
 
   return sendEliteEmail(toEmail, "Kode OTP Registrasi", name, message);
 }
+
+
 async function sendMessage(toEmail, name, msg) {
   const message = `
     Pesan Baru ! <br><br>
@@ -160,4 +162,5 @@ module.exports = {
   sendEliteEmail,
   sendOTPEmail,
   sendResetPasswordEmail,
+  sendMessage,
 };
